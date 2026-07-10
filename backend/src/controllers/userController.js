@@ -2,6 +2,8 @@ const User = require('../models/User');
 const Bus = require('../models/Bus');
 const { sendSuccess, sendError } = require('../utils/response');
 
+const normalizePhone = (phone) => (phone || '').trim().replace(/[\s()-]/g, '');
+
 // ─── STUDENTS ────────────────────────────────────────────────────────────────
 
 const getAllStudents = async (req, res) => {
@@ -100,10 +102,24 @@ const getDriver = async (req, res) => {
 
 const createDriver = async (req, res) => {
   try {
-    const { name, email, password, phone, licenseNumber } = req.body;
-    const existing = await User.findOne({ email });
-    if (existing) return sendError(res, 'Email already registered.', 400);
-    const driver = await User.create({ name, email, password, phone, licenseNumber, role: 'driver' });
+    const { name, password, phone, licenseNumber } = req.body;
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) return sendError(res, 'Phone number is required.', 400);
+
+    const existing = await User.findOne({ phone: normalizedPhone });
+    if (existing) return sendError(res, 'Phone number is already registered.', 400);
+
+    // Keep a unique internal email so existing MongoDB email indexes continue
+    // to work, while drivers only need to provide a phone number.
+    const internalEmail = `driver-${normalizedPhone.replace(/\D/g, '')}@phone.local`;
+    const driver = await User.create({
+      name,
+      email: internalEmail,
+      password,
+      phone: normalizedPhone,
+      licenseNumber,
+      role: 'driver',
+    });
     return sendSuccess(res, { driver }, 'Driver created.', 201);
   } catch (error) {
     return sendError(res, error.message);
@@ -115,6 +131,14 @@ const updateDriver = async (req, res) => {
     const { password, role, ...updateData } = req.body;
     const driver = await User.findOne({ _id: req.params.id, role: 'driver' });
     if (!driver) return sendError(res, 'Driver not found.', 404);
+
+    if (updateData.phone !== undefined) {
+      const normalizedPhone = normalizePhone(updateData.phone);
+      if (!normalizedPhone) return sendError(res, 'Phone number is required.', 400);
+      const existing = await User.findOne({ phone: normalizedPhone, _id: { $ne: driver._id } });
+      if (existing) return sendError(res, 'Phone number is already registered.', 400);
+      updateData.phone = normalizedPhone;
+    }
 
     Object.assign(driver, updateData);
     // Saving the document runs the password-hashing middleware when a new

@@ -7,7 +7,7 @@ import EmptyState from '../../components/common/EmptyState';
 import { PlusIcon, DriverIcon, EditIcon, TrashIcon, PhoneIcon, IdCardIcon, BusIcon, CloseIcon } from '../../components/common/Icons';
 import toast from 'react-hot-toast';
 
-const defaultForm = { name: '', email: '', password: '', phone: '', licenseNumber: '' };
+const defaultForm = { name: '', password: '', phone: '', licenseNumber: '' };
 
 const DriversPage = () => {
   const [drivers, setDrivers] = useState([]);
@@ -36,7 +36,7 @@ const DriversPage = () => {
   const openCreate = () => { setEditing(null); setForm(defaultForm); setModalOpen(true); };
   const openEdit = (d) => {
     setEditing(d);
-    setForm({ name: d.name, email: d.email, password: '', phone: d.phone || '', licenseNumber: d.licenseNumber || '' });
+    setForm({ name: d.name, password: '', phone: d.phone || '', licenseNumber: d.licenseNumber || '' });
     setModalOpen(true);
   };
 
@@ -98,7 +98,7 @@ const DriversPage = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-slate-900 truncate">{driver.name}</p>
-                <p className="text-xs text-slate-500 truncate">{driver.email}</p>
+                <p className="text-xs text-slate-500 truncate">{driver.phone || 'No phone number'}</p>
               </div>
               {driver.isOnTrip && <span className="badge badge-green text-xs flex-shrink-0">On Trip</span>}
             </div>
@@ -137,16 +137,12 @@ const DriversPage = () => {
               <input className="input-field" placeholder="Ramesh Kumar" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
             </div>
             <div>
-              <label className="label">Email</label>
-              <input type="email" className="input-field" placeholder="driver@college.edu" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            </div>
-            <div>
               <label className="label">Password {editing && '(leave blank to keep)'}</label>
               <input type="password" className="input-field" placeholder="Min 6 chars" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required={!editing} />
             </div>
             <div>
               <label className="label">Phone</label>
-              <input className="input-field" placeholder="+91 9876543210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <input type="tel" className="input-field" placeholder="+91 9876543210" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
             </div>
             <div>
               <label className="label">License Number</label>

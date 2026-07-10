@@ -18,7 +18,12 @@ router.post(
 router.post(
   '/login',
   [
-    body('email').isEmail().withMessage('Valid email is required'),
+    body().custom((value) => {
+      if (!value.identifier && !value.email && !value.phone) {
+        throw new Error('Email or phone number is required');
+      }
+      return true;
+    }),
     body('password').notEmpty().withMessage('Password is required'),
   ],
   loginUser

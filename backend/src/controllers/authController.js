@@ -4,6 +4,8 @@ const User = require('../models/User');
 const { generateToken } = require('../utils/jwt');
 const { sendSuccess, sendError } = require('../utils/response');
 
+const normalizePhone = (phone) => (phone || '').trim().replace(/[\s()-]/g, '');
+
 // @desc    Register student
 // @route   POST /api/auth/register
 // @access  Public
@@ -60,18 +62,23 @@ const loginUser = async (req, res) => {
     return sendError(res, 'Validation failed', 400, errors.array());
   }
   try {
-    const { email, password } = req.body;
-    const normalizedEmail = (email || '').trim().toLowerCase();
-    console.log(`Login attempt: ${normalizedEmail} from ${req.ip}`);
-    const user = await User.findOne({ email: normalizedEmail }).select('+password')
+    const { identifier, email, phone, password } = req.body;
+    const loginIdentifier = (identifier || email || phone || '').trim();
+    const isEmailLogin = loginIdentifier.includes('@');
+    const userQuery = isEmailLogin
+      ? { email: loginIdentifier.toLowerCase() }
+      : { phone: normalizePhone(loginIdentifier) };
+
+    console.log(`Login attempt from ${req.ip}`);
+    const user = await User.findOne(userQuery).select('+password')
       .populate({ path: 'assignedBus', populate: { path: 'assignedRoute' } })
       .populate({ path: 'assignedBusDriver', populate: { path: 'assignedRoute' } });
-    console.log(`User lookup for ${normalizedEmail}: ${user ? 'found' : 'not found'}`);
+    console.log(`User lookup: ${user ? 'found' : 'not found'}`);
     if (!user) {
       return sendError(res, 'Invalid credentials.', 401);
     }
     const isMatch = await user.comparePassword(password);
-    console.log(`Password match for ${normalizedEmail}: ${isMatch}`);
+    console.log(`Password match: ${isMatch}`);
     if (!isMatch) {
       return sendError(res, 'Invalid credentials.', 401);
     }
