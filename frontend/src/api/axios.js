@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
+console.log("VITE_API_URL =", import.meta.env.VITE_API_URL);
+console.log("API_BASE =", API_BASE);
+
 const api = axios.create({
   baseURL: API_BASE,
   timeout: 15000,
