@@ -12,4 +12,15 @@ const api = axios.create({
   },
 });
 
+// Attach the logged-in user's token to protected API requests.
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('cbt_token');
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 export default api;
