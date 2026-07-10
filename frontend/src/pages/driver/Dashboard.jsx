@@ -11,7 +11,7 @@ import {
 import toast from 'react-hot-toast';
 
 const DriverDashboard = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { socket, sendLocationUpdate, connected } = useSocket();
   const [activeTrip, setActiveTrip] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -180,6 +180,7 @@ const DriverDashboard = () => {
       const res = await tripAPI.startTrip({ tripType, latitude, longitude });
       const trip = res.data.data.trip;
       setActiveTrip(trip);
+      updateUser({ ...user, isOnTrip: true });
       toast.success('Trip started. Students will see your live bus location.');
       startTracking(trip._id, trip.bus?._id || (typeof user.assignedBus === 'string' ? user.assignedBus : user.assignedBus?._id));
     } catch (err) {
@@ -195,6 +196,7 @@ const DriverDashboard = () => {
       await tripAPI.endTrip(activeTrip._id);
       stopTracking();
       setActiveTrip(null);
+      updateUser({ ...user, isOnTrip: false });
       setCurrentPos(null);
       toast.success('Trip ended successfully');
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to end trip'); }
@@ -205,6 +207,7 @@ const DriverDashboard = () => {
 
   const bus = activeTrip?.bus || selectedBus || user.assignedBus || null;
   const route = activeTrip?.route || selectedRoute || bus?.assignedRoute || null;
+  const isTripActive = Boolean(activeTrip || user?.isOnTrip);
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -235,12 +238,12 @@ const DriverDashboard = () => {
           </div>
         </div>
         <div className="stat-card">
-          <div className={`stat-icon ${activeTrip ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
+          <div className={`stat-icon ${isTripActive ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-500'}`}>
             <ActivityIcon size={20} />
           </div>
           <div>
             <p className="text-sm text-slate-500">Status</p>
-            <p className={`font-bold ${activeTrip ? 'text-emerald-600' : 'text-slate-500'}`}>{activeTrip ? 'On Trip' : 'Idle'}</p>
+            <p className={`font-bold ${isTripActive ? 'text-emerald-600' : 'text-slate-500'}`}>{isTripActive ? 'On Trip' : 'Idle'}</p>
           </div>
         </div>
         <div className="stat-card">
