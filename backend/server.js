@@ -8,7 +8,7 @@ const connectDB = require('./src/config/db');
 const errorHandler = require('./src/middleware/errorHandler');
 const initializeSocket = require('./src/socket/socketHandler');
 const { createDemoAccounts } = require('./scripts/createDemoAccounts');
-
+ 
 // Route imports
 const authRoutes = require('./src/routes/authRoutes');
 const busRoutes = require('./src/routes/busRoutes');
