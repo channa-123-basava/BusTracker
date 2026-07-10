@@ -72,7 +72,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(async () => {
-  await createDemoAccounts();
+  // Demo accounts are useful locally, but must not overwrite real accounts
+  // whenever the production service restarts or redeploys.
+  if (process.env.NODE_ENV !== 'production') {
+    await createDemoAccounts();
+  }
   server.listen(PORT, () => {
     console.log(`Server running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
     console.log(`Socket.IO ready`);

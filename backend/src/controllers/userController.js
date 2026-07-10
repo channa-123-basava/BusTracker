@@ -113,13 +113,17 @@ const createDriver = async (req, res) => {
 const updateDriver = async (req, res) => {
   try {
     const { password, role, ...updateData } = req.body;
-    const driver = await User.findOneAndUpdate(
-      { _id: req.params.id, role: 'driver' },
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('assignedBusDriver');
+    const driver = await User.findOne({ _id: req.params.id, role: 'driver' });
     if (!driver) return sendError(res, 'Driver not found.', 404);
-    return sendSuccess(res, { driver }, 'Driver updated.');
+
+    Object.assign(driver, updateData);
+    // Saving the document runs the password-hashing middleware when a new
+    // password was supplied from the admin edit form.
+    if (password) driver.password = password;
+    await driver.save();
+
+    const updatedDriver = await User.findById(driver._id).populate('assignedBusDriver');
+    return sendSuccess(res, { driver: updatedDriver }, 'Driver updated.');
   } catch (error) {
     return sendError(res, error.message);
   }
