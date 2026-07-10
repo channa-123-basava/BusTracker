@@ -42,8 +42,17 @@ const DriverDashboard = () => {
   const fetchDriverData = async () => {
     try {
       const [busRes, routeRes] = await Promise.all([busAPI.getDriverBuses(), routeAPI.getAll()]);
-      setDriverBuses(busRes.data.data.buses || []);
+      const buses = busRes.data.data.buses || [];
+      setDriverBuses(buses);
       setRoutes(routeRes.data.data.routes || []);
+
+      // The user object saved at login does not include the bus status.
+      // Use the freshly fetched assigned bus so status changes made by an
+      // admin are reflected on the driver dashboard.
+      if (buses.length) {
+        setSelectedBus((current) => current || buses[0]);
+        setSelectedRoute((current) => current || buses[0].assignedRoute || null);
+      }
     } catch (err) {
       console.error('Failed to fetch driver data:', err);
     }
@@ -194,8 +203,8 @@ const DriverDashboard = () => {
 
   if (loading) return <LoadingSpinner text="Loading your dashboard..." />;
 
-  const bus = activeTrip?.bus || (user.assignedBus ? { busNumber: user.assignedBus?.busNumber } : null);
-  const route = activeTrip?.route;
+  const bus = activeTrip?.bus || selectedBus || user.assignedBus || null;
+  const route = activeTrip?.route || selectedRoute || bus?.assignedRoute || null;
 
   return (
     <div className="space-y-6 animate-fade-in">
