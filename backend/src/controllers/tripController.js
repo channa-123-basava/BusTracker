@@ -110,6 +110,16 @@ const startTrip = async (req, res) => {
         bus: { _id: bus._id, busNumber: bus.busNumber },
         notification,
       });
+      // Send the initial GPS point immediately. This means a student opening
+      // the tracker as the trip starts does not have to wait for the driver's
+      // next browser location change or the 15-second REST fallback.
+      io.to(`bus_${bus._id}`).emit('location_update', {
+        tripId: trip._id,
+        busId: bus._id,
+        latitude,
+        longitude,
+        updatedAt: trip.currentLocation.updatedAt,
+      });
       io.to('admin_room').emit('trip_started', { trip, bus });
     }
 

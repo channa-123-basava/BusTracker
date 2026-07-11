@@ -9,12 +9,11 @@ import { BusIcon, RouteIcon, ActivityIcon, ClockIcon, PhoneIcon, MapPinIcon } fr
 
 const StudentDashboard = () => {
   const { user } = useAuth();
-  const { socket, trackBus } = useSocket();
+  const { socket, connected, trackBus } = useSocket();
   const [activeTrip, setActiveTrip] = useState(null);
   const [busLocation, setBusLocation] = useState(null);
   const [busInfo, setBusInfo] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [tracking, setTracking] = useState(false);
   const [eta, setEta] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const [distanceToBus, setDistanceToBus] = useState(null);
@@ -39,7 +38,7 @@ const StudentDashboard = () => {
       const trip = tripRes.data.data.trip;
       setActiveTrip(trip);
       setBusInfo(busRes.data.data.bus);
-      if (trip?.currentLocation) setBusLocation(trip.currentLocation);
+      setBusLocation(trip?.currentLocation || busRes.data.data.bus?.currentLocation || null);
     } catch (err) { console.error(err); } finally { setLoading(false); }
   };
 
@@ -104,17 +103,20 @@ const StudentDashboard = () => {
     socket.on('trip_started', handleTripStarted);
     socket.on('trip_ended', handleTripEnded);
 
-    if (!tracking) {
-      trackBus(busIdToUse);
-      setTracking(true);
-    }
+    // A socket instance is created before it is connected. Subscribe both now
+    // (when already connected) and after every reconnect so the student always
+    // receives updates for the selected bus.
+    const subscribeToBus = () => trackBus(busIdToUse);
+    socket.on('connect', subscribeToBus);
+    if (connected) subscribeToBus();
 
     return () => {
       socket.off('location_update', handleLocation);
       socket.off('trip_started', handleTripStarted);
       socket.off('trip_ended', handleTripEnded);
+      socket.off('connect', subscribeToBus);
     };
-  }, [socket, assignedBusId, activeTrip, tracking, trackBus]);
+  }, [socket, connected, assignedBusId, displayedBusId, activeTrip, trackBus]);
 
   if (loading) return <LoadingSpinner text="Loading your bus info..." />;
 
