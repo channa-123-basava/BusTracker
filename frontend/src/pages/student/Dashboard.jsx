@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../context/NotificationContext';
 import { useSocket } from '../../context/SocketContext';
 import { tripAPI, busAPI, routeAPI } from '../../api/services';
 import LiveMap from '../../components/common/LiveMap';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Modal from '../../components/common/Modal';
-import { BusIcon, RouteIcon, ActivityIcon, ClockIcon, PhoneIcon, MapPinIcon } from '../../components/common/Icons';
+import { BusIcon, RouteIcon, ActivityIcon, ClockIcon, PhoneIcon, MapPinIcon, BellIcon, UserIcon } from '../../components/common/Icons';
 
 const StudentDashboard = () => {
   const { user } = useAuth();
+  const { notifications, unreadCount } = useNotifications();
   const { socket, connected, trackBus } = useSocket();
   const [activeTrip, setActiveTrip] = useState(null);
   const [busLocation, setBusLocation] = useState(null);
@@ -138,6 +141,37 @@ const StudentDashboard = () => {
             <span className="status-dot bg-emerald-500" /> Bus is on the way
           </span>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="stat-card">
+          <div className="stat-icon bg-primary-100 text-primary-600"><UserIcon size={20} /></div>
+          <div>
+            <p className="text-xs text-slate-500">Student</p>
+            <p className="font-bold text-slate-900">{user?.name || '-'}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon bg-amber-100 text-amber-600"><BusIcon size={20} /></div>
+          <div>
+            <p className="text-xs text-slate-500">Assigned Bus</p>
+            <p className="font-bold text-slate-900">{busInfo?.busNumber || 'Not assigned'}</p>
+          </div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-icon bg-blue-100 text-blue-600"><RouteIcon size={20} /></div>
+          <div>
+            <p className="text-xs text-slate-500">Bus Route</p>
+            <p className="font-bold text-slate-900 text-sm">{route?.routeName || 'Not assigned'}</p>
+          </div>
+        </div>
+        <Link to="/student/notifications" className="stat-card hover:ring-2 hover:ring-primary-100 transition-shadow">
+          <div className="stat-icon bg-purple-100 text-purple-600"><BellIcon size={20} /></div>
+          <div>
+            <p className="text-xs text-slate-500">Notifications</p>
+            <p className="font-bold text-slate-900">{unreadCount ? `${unreadCount} unread` : 'All caught up'}</p>
+          </div>
+        </Link>
       </div>
 
       {!assignedBusId ? (
@@ -380,6 +414,28 @@ const StudentDashboard = () => {
           )}
         </>
       )}
+
+      <div className="card p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display font-bold text-slate-900">Recent Notifications</h2>
+          <Link to="/student/notifications" className="text-sm font-medium text-primary-600 hover:text-primary-700">View all</Link>
+        </div>
+        {notifications.length === 0 ? (
+          <p className="text-sm text-slate-500">No notifications yet. Bus updates and alerts will appear here.</p>
+        ) : (
+          <div className="space-y-3">
+            {notifications.slice(0, 3).map((notification) => (
+              <div key={notification._id} className="flex items-start gap-3 rounded-lg bg-slate-50 p-3">
+                <BellIcon size={18} className="mt-0.5 shrink-0 text-primary-600" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-800">{notification.title}</p>
+                  <p className="text-sm text-slate-500 truncate">{notification.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

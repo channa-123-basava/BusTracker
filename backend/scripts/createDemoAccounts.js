@@ -1,6 +1,7 @@
 require('dotenv').config();
 const connectDB = require('../src/config/db');
 const User = require('../src/models/User');
+const Bus = require('../src/models/Bus');
 
 const buildAccounts = (options = {}) => {
   const adminEmail = options.adminEmail || process.argv[2] || 'admin@college.edu';
@@ -41,6 +42,9 @@ const buildAccounts = (options = {}) => {
 
 const createDemoAccounts = async (options = {}) => {
   const accounts = buildAccounts(options);
+  // Link demo users to the first available bus so the student dashboard can
+  // immediately show a bus and its assigned route after sign-in.
+  const demoBus = await Bus.findOne({ status: { $ne: 'inactive' } }).sort({ createdAt: 1 });
 
   for (const account of accounts) {
     const normalizedEmail = account.email.toLowerCase();
@@ -53,16 +57,23 @@ const createDemoAccounts = async (options = {}) => {
       existingUser.phone = account.phone;
       if (account.role === 'driver') {
         existingUser.licenseNumber = account.licenseNumber;
+        if (demoBus) existingUser.assignedBusDriver = demoBus._id;
       }
       if (account.role === 'student') {
         existingUser.studentId = account.studentId;
         existingUser.department = account.department;
         existingUser.year = account.year;
+        if (demoBus) existingUser.assignedBus = demoBus._id;
       }
       await existingUser.save();
       console.log(`Updated ${account.role}: ${normalizedEmail}`);
     } else {
-      await User.create({ ...account, email: normalizedEmail });
+      const busAssignment = account.role === 'driver'
+        ? { assignedBusDriver: demoBus?._id }
+        : account.role === 'student'
+          ? { assignedBus: demoBus?._id }
+          : {};
+      await User.create({ ...account, ...busAssignment, email: normalizedEmail });
       console.log(`Created ${account.role}: ${normalizedEmail}`);
     }
   }
