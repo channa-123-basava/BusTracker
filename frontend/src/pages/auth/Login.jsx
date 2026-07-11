@@ -29,21 +29,6 @@ const Login = () => {
     }
   };
 
-  const handleDemoLogin = async (demo) => {
-    setForm({ identifier: demo.identifier, password: demo.password });
-    setLoading(true);
-    try {
-      const user = await login(demo.identifier, demo.password);
-      toast.success(`Welcome back, ${user.name}`);
-      const dest = user.role === 'admin' ? '/admin' : user.role === 'driver' ? '/driver' : '/student';
-      navigate(dest, { replace: true });
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Demo login is unavailable. Start the backend and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const demoLogins = [
     { role: 'Admin', identifier: 'admin@college.edu', password: 'admin123' },
     { role: 'Driver', identifier: 'driver@college.edu', password: 'driver123' },
@@ -130,8 +115,7 @@ const Login = () => {
                 <button
                   key={d.role}
                   type="button"
-                  disabled={loading}
-                  onClick={() => handleDemoLogin(d)}
+                  onClick={() => setForm({ identifier: d.identifier, password: d.password })}
                   className="flex-1 text-xs py-2 px-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium transition-colors"
                 >
                   {d.role}
