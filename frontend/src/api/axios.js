@@ -1,8 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = "https://bus-tracker-backend-0t26.onrender.com/api";
-
-console.log("HARDCODED =", API_BASE);
+// In development this goes through Vite's /api proxy to the local backend.
+// A deployed frontend can set VITE_API_URL to its deployed API endpoint.
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE,
