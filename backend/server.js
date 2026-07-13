@@ -72,9 +72,11 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(async () => {
-  // Demo accounts are useful locally, but must not overwrite real accounts
-  // whenever the production service restarts or redeploys.
-  if (process.env.NODE_ENV !== 'production') {
+  // Seed demo credentials locally. Production only does this when explicitly
+  // enabled by the deployment configuration.
+  const shouldSeedDemoAccounts = process.env.NODE_ENV !== 'production'
+    || process.env.ENABLE_DEMO_ACCOUNTS === 'true';
+  if (shouldSeedDemoAccounts) {
     await createDemoAccounts();
   }
   server.listen(PORT, () => {

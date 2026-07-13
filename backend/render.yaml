@@ -19,3 +19,5 @@ services:
         value: 7d
       - key: CLIENT_URL
         sync: false
+      - key: ENABLE_DEMO_ACCOUNTS
+        value: true
