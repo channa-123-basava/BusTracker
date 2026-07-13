@@ -6,6 +6,14 @@ const { sendSuccess, sendError } = require('../utils/response');
 
 const normalizePhone = (phone) => (phone || '').trim().replace(/[\s()-]/g, '');
 
+// Matches phone numbers saved with common formatting such as spaces, hyphens,
+// parentheses, or an optional leading +. This keeps older registrations
+// searchable while new registrations are stored in a normalized format.
+const formattedPhonePattern = (phone) => {
+  const digits = normalizePhone(phone).replace(/\D/g, '');
+  return new RegExp(`^\\s*\\+?[\\s()-]*${digits.split('').join('[\\s()-]*')}\\s*$`);
+};
+
 // @desc    Register student
 // @route   POST /api/auth/register
 // @access  Public
@@ -25,7 +33,7 @@ const registerStudent = async (req, res) => {
       name,
       email: normalizedEmail,
       password,
-      phone,
+      phone: normalizePhone(phone),
       studentId,
       department,
       year,
@@ -65,9 +73,15 @@ const loginUser = async (req, res) => {
     const { identifier, email, phone, password } = req.body;
     const loginIdentifier = (identifier || email || phone || '').trim();
     const isEmailLogin = loginIdentifier.includes('@');
+    const normalizedPhone = normalizePhone(loginIdentifier);
     const userQuery = isEmailLogin
       ? { email: loginIdentifier.toLowerCase() }
-      : { phone: normalizePhone(loginIdentifier) };
+      : {
+        $or: [
+          { phone: normalizedPhone },
+          { phone: formattedPhonePattern(loginIdentifier) },
+        ],
+      };
 
     console.log(`Login attempt from ${req.ip}`);
     const user = await User.findOne(userQuery).select('+password')
