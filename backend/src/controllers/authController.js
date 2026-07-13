@@ -9,9 +9,17 @@ const normalizePhone = (phone) => (phone || '').trim().replace(/[\s()-]/g, '');
 // Matches phone numbers saved with common formatting such as spaces, hyphens,
 // parentheses, or an optional leading +. This keeps older registrations
 // searchable while new registrations are stored in a normalized format.
-const formattedPhonePattern = (phone) => {
+const formattedPhonePatterns = (phone) => {
   const digits = normalizePhone(phone).replace(/\D/g, '');
-  return new RegExp(`^\\s*\\+?[\\s()-]*${digits.split('').join('[\\s()-]*')}\\s*$`);
+  const variants = [digits];
+
+  // Treat an Indian local number and its +91 form as the same number.
+  if (digits.length === 12 && digits.startsWith('91')) variants.push(digits.slice(2));
+  if (digits.length === 10) variants.push(`91${digits}`);
+
+  return [...new Set(variants)].map(
+    (variant) => new RegExp(`^\\s*\\+?[\\s()-]*${variant.split('').join('[\\s()-]*')}\\s*$`)
+  );
 };
 
 // @desc    Register student
@@ -79,7 +87,7 @@ const loginUser = async (req, res) => {
       : {
         $or: [
           { phone: normalizedPhone },
-          { phone: formattedPhonePattern(loginIdentifier) },
+          ...formattedPhonePatterns(loginIdentifier).map((pattern) => ({ phone: pattern })),
         ],
       };
 
